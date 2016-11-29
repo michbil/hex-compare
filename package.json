@@ -1,0 +1,16 @@
+{
+  "name": "hexcomp",
+  "version": "0.0.1",
+  "description": "Terminal based binary file compare utility",
+  "main": "index.js",
+  "author": "Michael Bilenko",
+  "license": "MIT",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "command-line-args": "^3.0.3",
+    "es6-promise": "^4.0.5"
+  },
+  "bin": {
+    "hexcompare": "index.js"
+  }
+}
