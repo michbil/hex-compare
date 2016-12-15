@@ -48,7 +48,7 @@ class BinaryBuffer {
                 }
                 this.buffer = new Buffer(length);
                 fs.read(fd, this.buffer, 0, length, 0, (err, num) => {
-                    resolve(this.buffer);
+                    resolve(this);
                 });
             });
         });
@@ -93,5 +93,12 @@ class BinaryBuffer {
     getNumLines(width) {
         return Math.ceil(this.buffer.length / width);
     }
+
+    static getWidth(columns) {
+        return 6+2+2+columns*4 + 3;
+    }
+
+    static getNarrowWidth () { return this.getWidth(8)}
+    static getFullWdith () { return this.getWidth(16)}
 }
 module.exports = BinaryBuffer;

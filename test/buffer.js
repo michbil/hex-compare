@@ -25,8 +25,10 @@ describe("Buffer test", () => {
     it ('should generate difference map correctly', () => {
         const mask = buf1.getDiffMask(buf2,0,5);
         expect(mask).to.eql([false,false,false,true,false]);
-    })
+    });
 
-    it ('should make bold symbols')
+    it ('should make bold symbols', ()=> {
+
+    });
 
 });

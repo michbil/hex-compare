@@ -2,11 +2,8 @@
 const blessed = require('blessed');
 const Buffer = require('./buffer');
 
-// print process.argv
-process.argv.forEach(function (val, index, array) {
-    console.log(index + ': ' + val);
-
-});
+const params = require('./params');
+const filenames = params;
 
 
 // Create a screen object.
@@ -16,35 +13,30 @@ var screen = blessed.screen({
 
 screen.title = 'HexComp';
 
-function mkBox(props) {
-    let box = blessed.list({
-        top: 'center',
-        alwaysScroll: true,
-        scrollable: true,
-        scrollbar: true,
-        width: '51%',
-        height: '100%',
-        content: 'Loading...',
-        tags: true,
-        border: {
-            type: 'line'
-        },
-        style: {
-            fg: 'white',
-            bg: 'black',
-            border: {
-                fg: '#f0f0f0'
-            },
-            scrollbar: {
-                bg: 'blue'
-            },
-        }
-    });
-    return Object.assign(box,props);
-}
 
-var box = mkBox({left:"0"});
-var box2 = mkBox({right: "0"});
+const maxColumns = Math.floor(screen.width / Buffer.getNarrowWidth());
+const numBuffers = filenames.length;
+const numColumns = numBuffers > maxColumns ? maxColumns : numBuffers;
+
+
+const calcWidth = () => {
+    if (numColumns > 2) {
+        return 8;
+    }
+    return screen.width > (Buffer.getFullWdith()*2) ? 16 : 8;
+};
+
+const mkBox = require('./graphics').mkBox;
+
+const columnWidth = Buffer.getWidth(calcWidth());
+const wrap = f => '['+f+']';
+const boxes = filenames.map((name,i) => mkBox(
+    {
+        left: (columnWidth+1)*i,
+        width:columnWidth+1,
+        label:wrap(name)
+    }));
+
 
 // Quit on Escape, q, or Control-C.
 screen.key(['escape', 'q', 'C-c'], function(ch, key) {
@@ -60,8 +52,7 @@ const scroll = (d) => {
 
     if ((time - t > 30) || Math.abs(saved) > 5) {
         d += saved;
-        box.scroll(d);
-        box2.scroll(d);
+        boxes.forEach((box)=>box.scroll(d));
         screen.render();
         saved = 0;
     } else {
@@ -84,33 +75,49 @@ setInterval(()=>{
 screen.key(['down','j'], () => scroll(1));
 screen.key(['up','k'], () => scroll(-1));
 
-screen.append(box);
-screen.append(box2);
-box.focus();
-box2.focus();
+boxes.forEach((box)=> {
+    screen.append(box);
+    box.focus();
+});
+
 screen.render();
 
+let buffers;
 
-
-const buf1 = new Buffer("buf1");
-const buf2 = new Buffer("buf2");
-
-let buffers = [buf1.loadFromFile(process.argv[2]),buf2.loadFromFile(process.argv[3])];
-
-Promise.all(buffers).then(()=>{
-    const width = screen.width > 130 ? 16 : 8;
-    let numlines1 = buf1.getNumLines(width);
-    let numlines2 = buf2.getNumLines(width);
-    let text1 = "", text2= "";
-    for (let i=0;i<numlines1;i++) {
-        const mask = buf1.getDiffMask(buf2,i*width,width);
-        text1 += buf1.formatChunk(i*width,width,mask)+"\n";
-        text2+= buf2.formatChunk(i*width,width,mask)+"\n";
-    }
-    box.setContent(text1);
-    box2.setContent(text2);
-    screen.render();
-
+Promise.all(filenames.map(
+    (name)=>new Buffer(name).loadFromFile(name))
+).then(b=>{
+   buffers = b;
+   displayBuffers(buffers);
 }).catch((e)=>{
     console.log("Error",e);
 }) ;
+
+
+const greater = (val1,val2) => val1 > val2 ? val1 : val2;
+const getMask  = (buffer,pos,i) => {
+  const width = calcWidth();
+  if (i == 0) {
+      return buffers[1].getDiffMask(buffer, pos*width, width);
+  }   else {
+      return buffer.getDiffMask(buffers[0], pos*width, width);
+  }
+};
+
+const displayBuffers = (buffers) => {
+    const width = calcWidth();
+    const numLines = buffers.map(b => b.getNumLines(width));
+    const maxLines = Math.max.apply(null, numLines);
+
+
+    buffers.forEach((buffer,i) => {
+        let text = "";
+        for (let j=0;j<maxLines;j++) {
+            const mask = getMask(buffer,j,i);
+            text += buffer.formatChunk(j*width,width,mask)+"\n";
+        }
+        boxes[i].setContent(text);
+    });
+
+    screen.render();
+};
