@@ -75,6 +75,9 @@ setInterval(()=>{
 screen.key(['down','j'], () => scroll(1));
 screen.key(['up','k'], () => scroll(-1));
 
+screen.key(['pgdown','n'], () => scroll(20));
+screen.key(['pgup','p'], () => scroll(-20));
+
 boxes.forEach((box)=> {
     screen.append(box);
     box.focus();
