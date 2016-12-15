@@ -53,7 +53,7 @@ const scroll = (d) => {
     if ((time - t > 30) || Math.abs(saved) > 5) {
         d += saved;
         boxes.forEach((box)=>box.scroll(d));
-        screen.render();
+        //screen.render();
         saved = 0;
     } else {
         saved += d;
